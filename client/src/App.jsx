@@ -1,6 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { CssBaseline, Box } from '@mui/material';
+import { CssBaseline, Box, Grid } from '@mui/material';
 
 // Components
 import NavBar from './components/Layout/NavBar';
@@ -37,48 +37,63 @@ function App() {
       <Router>
         <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
           <NavBar />
-          <Box component="main" sx={{ flexGrow: 1 }}>
+          <Box component="main" sx={{ flexGrow: 1, px: { xs: 1, sm: 2, md: 3 } }}>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/pipeline" element={
-                <ProtectedRoute>
-                  <Box sx={{ display: 'flex', height: 'calc(100vh - 64px)' }}>
-                    <Box sx={{ flexGrow: 1 }}>
-                      <KanbanBoard />
-                    </Box>
-                    <Box sx={{ width: 350, p: 2 }}>
-                      <AIAssistant />
-                    </Box>
-                  </Box>
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/deals" element={
-                <ProtectedRoute>
-                  <DealList />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/deals/new" element={
-                <ProtectedRoute>
-                  <DealForm />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="/deals/:id" element={
-                <ProtectedRoute>
-                  <DealForm />
-                </ProtectedRoute>
-              } />
-              
+
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/pipeline"
+                element={
+                  <ProtectedRoute>
+                    <Grid container spacing={2} sx={{ mt: 2 }}>
+                      <Grid item xs={12} md={8}>
+                        <KanbanBoard />
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <AIAssistant />
+                      </Grid>
+                    </Grid>
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/deals"
+                element={
+                  <ProtectedRoute>
+                    <DealList />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/deals/new"
+                element={
+                  <ProtectedRoute>
+                    <DealForm />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/deals/:id"
+                element={
+                  <ProtectedRoute>
+                    <DealForm />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route path="/" element={<Navigate to="/dashboard" />} />
             </Routes>
           </Box>

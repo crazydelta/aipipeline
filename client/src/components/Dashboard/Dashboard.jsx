@@ -23,6 +23,36 @@ const Dashboard = () => {
   }, []);
 
   const fetchStats = async () => {
+    // Simulate loading
+    setTimeout(() => {
+      const dummyStats = {
+        totalDeals: 12,
+        totalValue: 58000,
+        winRate: 33,
+        avgDealSize: 4833,
+        stageDistribution: {
+          Lead: 3,
+          Qualified: 2,
+          Proposal: 4,
+          'Closed Won': 2,
+          'Closed Lost': 1
+        },
+        monthlyTrend: [
+          { month: 'Jan', value: 4000 },
+          { month: 'Feb', value: 5000 },
+          { month: 'Mar', value: 9000 },
+          { month: 'Apr', value: 12000 },
+          { month: 'May', value: 8000 },
+          { month: 'Jun', value: 10000 },
+        ]
+      };
+  
+      setStats(dummyStats);
+      setLoading(false);
+    }, 1000); // simulate 1s delay
+  };
+
+ /* const fetchStats = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/analytics/dashboard', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -42,7 +72,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  };*/
 
   const stageData = {
     labels: Object.keys(stats.stageDistribution || {}),
