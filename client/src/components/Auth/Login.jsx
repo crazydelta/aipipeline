@@ -13,8 +13,8 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const { token } = await authService.login({ email, password });
-      login(token);  // <-- Context login
+      const { data } = await authService.login({ email, password });
+      login(data.token);
       navigate('/dashboard');
     } catch (err) {
       console.error('Login failed:', err);

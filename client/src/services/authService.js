@@ -1,23 +1,14 @@
+import axios from 'axios';
+
 const API_URL = 'http://localhost:5000/api/auth';
 
-const login = async (email, password) => {
-  const res = await fetch(`${API_URL}/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  if (!res.ok) throw new Error((await res.json()).message);
-  return await res.json();
+const authService = {
+  register: ({ name, email, password }) =>
+    axios.post(`${API_URL}/register`, { name, email, password }),
+
+  login: ({ email, password }) =>
+    axios.post(`${API_URL}/login`, { email, password })
 };
 
-const register = async (email, password) => {
-  const res = await fetch(`${API_URL}/register`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password })
-  });
-  if (!res.ok) throw new Error((await res.json()).message);
-  return await res.json();
-};
+export default authService;
 
-export default { login, register };
