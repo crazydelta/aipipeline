@@ -7,7 +7,7 @@ const bodyParser = require('body-parser');
 dotenv.config();
 
 const authRoutes = require('./routes/auth');
-const dealRoutes = require('./routes/deals');
+const dealRoutes = require('./routes/dealRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 const aiRoutes = require('./routes/aiRoutes'); // ✅ only this one now
 
@@ -20,8 +20,11 @@ mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => console.log('✅ Connected to MongoDB'))
-  .catch(err => console.error('❌ MongoDB connection failed:', err));
+.then(() => {
+  console.log('✅ Connected to MongoDB');
+  console.log('👉 Using DB:', mongoose.connection.name); // Add this
+})
+.catch(err => console.error('❌ MongoDB connection failed:', err));
 
 app.use('/api/auth', authRoutes);
 app.use('/api/deals', dealRoutes);

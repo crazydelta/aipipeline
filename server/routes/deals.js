@@ -1,10 +1,11 @@
+// routes/deals.js
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth'); // must be a function
+const { createDeal } = require('../controllers/dealController');
+const protect = require('../middleware/authMiddleware');
 
-router.get('/deals', auth, (req, res) => {
-  res.send('Deals data');
-});
+router.post('/', protect, createDeal); // ✅ PROTECT this route
 
 module.exports = router;
+
 
