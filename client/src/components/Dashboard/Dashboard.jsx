@@ -23,34 +23,29 @@ const Dashboard = () => {
   }, []);
 
   const fetchStats = async () => {
-    // Simulate loading
-    setTimeout(() => {
-      const dummyStats = {
-        totalDeals: 12,
-        totalValue: 58000,
-        winRate: 33,
-        avgDealSize: 4833,
-        stageDistribution: {
-          Lead: 3,
-          Qualified: 2,
-          Proposal: 4,
-          'Closed Won': 2,
-          'Closed Lost': 1
-        },
-        monthlyTrend: [
-          { month: 'Jan', value: 4000 },
-          { month: 'Feb', value: 5000 },
-          { month: 'Mar', value: 9000 },
-          { month: 'Apr', value: 12000 },
-          { month: 'May', value: 8000 },
-          { month: 'Jun', value: 10000 },
-        ]
-      };
-  
-      setStats(dummyStats);
+    try {
+      const response = await axios.get('http://localhost:5000/api/analytics/dashboard', {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log('Dashboard stats:', response.data);
+      setStats({
+        totalDeals: response.data.totalDeals || 0,
+        totalValue: response.data.totalValue || 0,
+        stageDistribution: response.data.stageDistribution || {},
+        monthlyTrend: response.data.monthlyTrend || [],
+        winRate: response.data.winRate || 0,
+        avgDealSize: response.data.avgDealSize || 0,
+        insights: response.data.insights || [],
+        recentDeals: response.data.recentDeals || [],  // ✅ Add this
+      });
+    } catch (err) {
+      console.error('Error fetching dashboard stats:', err);
+      setError('Failed to load dashboard data.');
+    } finally {
       setLoading(false);
-    }, 1000); // simulate 1s delay
+    }
   };
+  
 
  /* const fetchStats = async () => {
     try {
@@ -167,6 +162,23 @@ const Dashboard = () => {
             </Box>
           </Paper>
         </Grid>
+        <Grid item xs={12}>
+          <Paper sx={{ p: 2 }}>
+            <Typography variant="h6" gutterBottom>Recent Deals</Typography>
+            {stats.recentDeals && stats.recentDeals.length > 0 ? (
+              stats.recentDeals.slice(0, 5).map((deal, index) => (
+                <Box key={index} sx={{ mb: 1 }}>
+                  <Typography variant="body1">
+                    {deal.title} - ${deal.value} - {deal.stage}
+                  </Typography>
+                </Box>
+              ))
+            ) : (
+              <Typography>No recent deals.</Typography>
+            )}
+          </Paper>
+        </Grid>
+
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 2 }}>
             <Typography variant="h6" gutterBottom>Monthly Trend</Typography>
