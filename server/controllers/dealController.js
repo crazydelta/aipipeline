@@ -46,3 +46,45 @@ exports.createDeal = async (req, res) => {
     res.status(500).json({ message: 'Failed to create deal', error: err.message });
   }
 };
+
+
+// Update deal
+exports.updateDeal = async (req, res) => {
+  try {
+    const updatedDeal = await Deal.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user },
+      req.body,
+      { new: true }
+    );
+    if (!updatedDeal) return res.status(404).json({ message: 'Deal not found' });
+    res.json(updatedDeal);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update deal' });
+  }
+};
+
+// Delete deal
+exports.deleteDeal = async (req, res) => {
+  try {
+    const deleted = await Deal.findOneAndDelete({ _id: req.params.id, owner: req.user });
+    if (!deleted) return res.status(404).json({ message: 'Deal not found' });
+    res.json({ message: 'Deal deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to delete deal' });
+  }
+};
+
+// Update only the stage (for drag and drop)
+exports.updateDealStage = async (req, res) => {
+  try {
+    const updatedDeal = await Deal.findOneAndUpdate(
+      { _id: req.params.id, owner: req.user },
+      { stage: req.body.stage },
+      { new: true }
+    );
+    if (!updatedDeal) return res.status(404).json({ message: 'Deal not found' });
+    res.json(updatedDeal);
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update deal stage' });
+  }
+};

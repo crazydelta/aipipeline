@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import {
   Box, Paper, Typography, Button, Card, CardContent, Chip,
   IconButton, Modal, TextField, Select, MenuItem, FormControl,
-  InputLabel, Snackbar
+  InputLabel, Menu
 } from '@mui/material';
 import { MoreVert, AttachMoney } from '@mui/icons-material';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import API from '../../utils/api';
 
 const stages = ['Lead', 'Qualified', 'Proposal', 'Negotiation', 'Closed Won', 'Closed Lost'];
@@ -14,23 +14,17 @@ const KanbanBoard = () => {
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedDealId, setSelectedDealId] = useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [menuDealId, setMenuDealId] = useState(null);
   const [newDeal, setNewDeal] = useState({
-    title: '',
-    company: '',
-    value: '',
-    stage: 'Lead',
-    contactName: '',
-    contactEmail: '',
-    contactPhone: '',
-    probability: '',
-    notes: '',
-    expectedCloseDate: '',
+    title: '', company: '', value: '', stage: 'Lead',
+    contactName: '', contactEmail: '', contactPhone: '',
+    probability: '', notes: '', expectedCloseDate: ''
   });
 
-  useEffect(() => {
-    fetchDeals();
-  }, []);
+  useEffect(() => { fetchDeals(); }, []);
 
   const fetchDeals = async () => {
     try {
@@ -44,35 +38,28 @@ const KanbanBoard = () => {
     }
   };
 
-  const handleCreateDeal = async () => {
-    if (!newDeal.title || !newDeal.company || !newDeal.value) {
-      alert('Please fill in all required fields.');
-      return;
-    }
-
+  const handleCreateOrUpdateDeal = async () => {
     try {
-      const response = await API.post('/deals', {
-        ...newDeal,
-        value: parseFloat(newDeal.value),
-        probability: parseInt(newDeal.probability),
-      });
-      setDeals(prev => [...prev, response.data]);
+      if (isEditing && selectedDealId) {
+        const response = await API.put(`/deals/${selectedDealId}`, newDeal);
+        setDeals(prev => prev.map(d => d._id === selectedDealId ? response.data : d));
+      } else {
+        const response = await API.post('/deals', newDeal);
+        setDeals(prev => [...prev, response.data]);
+      }
       setOpenModal(false);
-      setNewDeal({
-        title: '',
-        company: '',
-        value: '',
-        stage: 'Lead',
-        contactName: '',
-        contactEmail: '',
-        contactPhone: '',
-        probability: '',
-        notes: '',
-        expectedCloseDate: '',
-      });
-      setSuccessMessage('Deal created successfully!');
+      resetModal();
     } catch (error) {
-      console.error('Error creating deal:', error);
+      console.error('Error saving deal:', error);
+    }
+  };
+
+  const handleDeleteDeal = async (id) => {
+    try {
+      await API.delete(`/deals/${id}`);
+      setDeals(prev => prev.filter(d => d._id !== id));
+    } catch (error) {
+      console.error('Error deleting deal:', error);
     }
   };
 
@@ -81,13 +68,39 @@ const KanbanBoard = () => {
     if (!destination || source.droppableId === destination.droppableId) return;
 
     try {
-      await API.patch(`/deals/${draggableId}/stage`, {
-        stage: destination.droppableId
-      });
+      await API.patch(`/deals/${draggableId}/stage`, { stage: destination.droppableId });
       fetchDeals();
     } catch (error) {
       console.error('Error updating deal stage:', error);
     }
+  };
+
+  const openMenu = (event, id) => {
+    setAnchorEl(event.currentTarget);
+    setMenuDealId(id);
+  };
+
+  const closeMenu = () => {
+    setAnchorEl(null);
+    setMenuDealId(null);
+  };
+
+  const handleEdit = (deal) => {
+    setNewDeal(deal);
+    setSelectedDealId(deal._id);
+    setIsEditing(true);
+    setOpenModal(true);
+    closeMenu();
+  };
+
+  const resetModal = () => {
+    setIsEditing(false);
+    setSelectedDealId(null);
+    setNewDeal({
+      title: '', company: '', value: '', stage: 'Lead',
+      contactName: '', contactEmail: '', contactPhone: '',
+      probability: '', notes: '', expectedCloseDate: ''
+    });
   };
 
   if (loading) return <Typography>Loading deals...</Typography>;
@@ -111,46 +124,35 @@ const KanbanBoard = () => {
 
                 <Droppable droppableId={stage}>
                   {(provided) => (
-                    <Box
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      sx={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}
-                    >
-                      {deals
-                        .filter(deal => deal.stage === stage)
-                        .map((deal, index) => (
-                          <Draggable key={deal._id} draggableId={deal._id} index={index}>
-                            {(provided) => (
-                              <Card
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                sx={{ mb: 2, bgcolor: 'white' }}
+                    <Box ref={provided.innerRef} {...provided.droppableProps} sx={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}>
+                      {deals.filter(deal => deal.stage === stage).map((deal, index) => (
+                        <Draggable key={deal._id} draggableId={deal._id} index={index}>
+                          {(provided) => (
+                            <Card ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} sx={{ mb: 2, bgcolor: 'white' }}>
+                              <CardContent>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <Typography variant="h6">{deal.title}</Typography>
+                                  <IconButton size="small" onClick={(e) => openMenu(e, deal._id)}><MoreVert /></IconButton>
+                                </Box>
+                                <Typography variant="body2" color="textSecondary">{deal.company}</Typography>
+                                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
+                                  <Chip icon={<AttachMoney />} label={`$${deal.value.toLocaleString()}`} size="small" color="primary" />
+                                  <Typography variant="caption">{new Date(deal.updatedAt).toLocaleDateString()}</Typography>
+                                </Box>
+                              </CardContent>
+
+                              <Menu
+                                anchorEl={anchorEl}
+                                open={menuDealId === deal._id}
+                                onClose={closeMenu}
                               >
-                                <CardContent>
-                                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="h6">{deal.title}</Typography>
-                                    <IconButton size="small"><MoreVert /></IconButton>
-                                  </Box>
-                                  <Typography variant="body2" color="textSecondary">
-                                    {deal.company}
-                                  </Typography>
-                                  <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
-                                    <Chip
-                                      icon={<AttachMoney />}
-                                      label={`$${deal.value.toLocaleString()}`}
-                                      size="small"
-                                      color="primary"
-                                    />
-                                    <Typography variant="caption">
-                                      {new Date(deal.updatedAt).toLocaleDateString()}
-                                    </Typography>
-                                  </Box>
-                                </CardContent>
-                              </Card>
-                            )}
-                          </Draggable>
-                        ))}
+                                <MenuItem onClick={() => handleEdit(deal)}>Edit</MenuItem>
+                                <MenuItem onClick={() => handleDeleteDeal(deal._id)}>Delete</MenuItem>
+                              </Menu>
+                            </Card>
+                          )}
+                        </Draggable>
+                      ))}
                       {provided.placeholder}
                     </Box>
                   )}
@@ -161,38 +163,17 @@ const KanbanBoard = () => {
         </DragDropContext>
       </Box>
 
-      {/* Add Deal Modal */}
-      <Modal open={openModal} onClose={() => setOpenModal(false)}>
-        <Box sx={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          p: 3,
-          bgcolor: 'white',
-          width: '90%',
-          maxWidth: 400,
-          maxHeight: '90vh',
-          overflowY: 'auto',
-          borderRadius: 2,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2
-        }}>
-          <Typography variant="h6">Add New Deal</Typography>
+      {/* Modal for Add/Edit Deal */}
+      <Modal open={openModal} onClose={() => { setOpenModal(false); resetModal(); }}>
+        <Box sx={{ p: 3, bgcolor: 'white', width: 400, maxHeight: '90vh', overflowY: 'auto', mx: 'auto', mt: 5, display: 'flex', flexDirection: 'column', gap: 2, borderRadius: 2 }}>
+          <Typography variant="h6">{isEditing ? 'Edit Deal' : 'Add New Deal'}</Typography>
           <TextField label="Title" value={newDeal.title} onChange={(e) => setNewDeal({ ...newDeal, title: e.target.value })} />
           <TextField label="Company" value={newDeal.company} onChange={(e) => setNewDeal({ ...newDeal, company: e.target.value })} />
           <TextField label="Value" type="number" value={newDeal.value} onChange={(e) => setNewDeal({ ...newDeal, value: e.target.value })} />
           <FormControl fullWidth>
             <InputLabel>Stage</InputLabel>
-            <Select
-              value={newDeal.stage}
-              label="Stage"
-              onChange={(e) => setNewDeal({ ...newDeal, stage: e.target.value })}
-            >
-              {stages.map(stage => (
-                <MenuItem key={stage} value={stage}>{stage}</MenuItem>
-              ))}
+            <Select value={newDeal.stage} label="Stage" onChange={(e) => setNewDeal({ ...newDeal, stage: e.target.value })}>
+              {stages.map(stage => (<MenuItem key={stage} value={stage}>{stage}</MenuItem>))}
             </Select>
           </FormControl>
           <TextField label="Contact Name" value={newDeal.contactName} onChange={(e) => setNewDeal({ ...newDeal, contactName: e.target.value })} />
@@ -200,24 +181,10 @@ const KanbanBoard = () => {
           <TextField label="Contact Phone" value={newDeal.contactPhone} onChange={(e) => setNewDeal({ ...newDeal, contactPhone: e.target.value })} />
           <TextField label="Probability (%)" type="number" value={newDeal.probability} onChange={(e) => setNewDeal({ ...newDeal, probability: e.target.value })} />
           <TextField label="Notes" multiline minRows={2} value={newDeal.notes} onChange={(e) => setNewDeal({ ...newDeal, notes: e.target.value })} />
-          <TextField
-            label="Expected Close Date"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            value={newDeal.expectedCloseDate}
-            onChange={(e) => setNewDeal({ ...newDeal, expectedCloseDate: e.target.value })}
-          />
-          <Button variant="contained" onClick={handleCreateDeal}>Create</Button>
+          <TextField label="Expected Close Date" type="date" InputLabelProps={{ shrink: true }} value={newDeal.expectedCloseDate} onChange={(e) => setNewDeal({ ...newDeal, expectedCloseDate: e.target.value })} />
+          <Button variant="contained" onClick={handleCreateOrUpdateDeal}>{isEditing ? 'Update' : 'Create'}</Button>
         </Box>
       </Modal>
-
-      {/* Snackbar */}
-      <Snackbar
-        open={Boolean(successMessage)}
-        autoHideDuration={3000}
-        onClose={() => setSuccessMessage('')}
-        message={successMessage}
-      />
     </Box>
   );
 };

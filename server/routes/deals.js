@@ -7,5 +7,3 @@ const protect = require('../middleware/authMiddleware');
 router.post('/', protect, createDeal); // ✅ PROTECT this route
 
 module.exports = router;
-
-
