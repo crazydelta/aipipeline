@@ -1,4 +1,3 @@
-// src/components/AI/AIAssistant.jsx
 import React, { useState } from 'react';
 import {
   Box,
@@ -25,18 +24,26 @@ const AIAssistant = () => {
     setLoading(true);
 
     try {
-      // Simulate or use real API call
-      const res = await fetch('http://localhost:5000/api/ai/ask', {
+      const res = await fetch('http://localhost:5000/api/ai/assistant', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ prompt: input }),
       });
 
       const data = await res.json();
-      const aiReply = { sender: 'ai', text: data.reply || 'Sorry, no response received.' };
+      const aiReply = {
+        sender: 'ai',
+        text: data.insights || 'Sorry, no response received.',
+      };
       setMessages((prev) => [...prev, aiReply]);
     } catch (err) {
-      setMessages((prev) => [...prev, { sender: 'ai', text: 'Oops, something went wrong.' }]);
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        { sender: 'ai', text: 'Oops, something went wrong.' },
+      ]);
     } finally {
       setLoading(false);
     }

@@ -1,10 +1,10 @@
-// server/routes/ai.js
+// routes/airoutes.js
 const express = require('express');
 const router = express.Router();
+const { askCohere } = require('../controllers/aiController');
+const protect = require('../middleware/protect');
 
-// Example test route
-router.get('/', (req, res) => {
-  res.json({ message: 'AI endpoint is working!' });
-});
+router.post('/cohere', protect, askCohere);
 
 module.exports = router;
+
