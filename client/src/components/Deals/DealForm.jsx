@@ -9,7 +9,7 @@ const DealForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch('http://localhost:5000/api/deals', {
+    const res = await fetch('https://aipipeline-l70a.onrender.com/api/deals', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -13,7 +13,15 @@ const aiRoutes = require('./routes/aiRoutes'); // ✅ only this one now
 
 const app = express();
 
-app.use(cors());
+const allowedOrigins = [
+  'http://localhost:5173', // local dev
+  'https://your-frontend.vercel.app', // replace with actual Vercel URL
+];
+
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true, // if you're using cookies/sessions
+}));
 app.use(bodyParser.json());
 
 mongoose.connect(process.env.MONGODB_URI, {

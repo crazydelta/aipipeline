@@ -24,7 +24,7 @@ const Dashboard = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/analytics/dashboard', {
+      const response = await axios.get('https://aipipeline-l70a.onrender.com/api/analytics/dashboard', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       console.log('Dashboard stats:', response.data);
@@ -49,7 +49,7 @@ const Dashboard = () => {
 
  /* const fetchStats = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/analytics/dashboard', {
+      const response = await axios.get('https://aipipeline-l70a.onrender.com/api/analytics/dashboard', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
       console.log('Dashboard stats:', response.data);

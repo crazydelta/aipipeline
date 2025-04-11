@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api/auth';
+const API_URL = 'https://aipipeline-l70a.onrender.com/api/auth';
 
 const authService = {
   register: ({ name, email, password }) =>
