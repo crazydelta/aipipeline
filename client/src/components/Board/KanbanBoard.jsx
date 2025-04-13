@@ -18,13 +18,19 @@ const KanbanBoard = () => {
   const [selectedDealId, setSelectedDealId] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
   const [menuDealId, setMenuDealId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [newDeal, setNewDeal] = useState({
     title: '', company: '', value: '', stage: 'Lead',
     contactName: '', contactEmail: '', contactPhone: '',
     probability: '', notes: '', expectedCloseDate: ''
   });
 
-  useEffect(() => { fetchDeals(); }, []);
+  // File upload state
+  const [uploadFile, setUploadFile] = useState(null);
+
+  useEffect(() => {
+    fetchDeals();
+  }, []);
 
   const fetchDeals = async () => {
     try {
@@ -103,13 +109,65 @@ const KanbanBoard = () => {
     });
   };
 
+  const filteredDeals = deals.filter(deal =>
+    deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    deal.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    deal.contactName?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Handle JSON file upload
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setUploadFile(file);
+    }
+  };
+
+  const handleFileUpload = async () => {
+    if (!uploadFile) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const jsonData = JSON.parse(e.target.result);
+        if (Array.isArray(jsonData)) {
+          for (let deal of jsonData) {
+            const response = await API.post('/deals', deal);
+            setDeals(prev => [...prev, response.data]);
+          }
+        } else {
+          console.error('Invalid JSON format: Not an array');
+        }
+      } catch (error) {
+        console.error('Error parsing JSON file:', error);
+      }
+    };
+    reader.readAsText(uploadFile);
+  };
+
   if (loading) return <Typography>Loading deals...</Typography>;
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'flex-end', m: 2 }}>
+      {/* Top Controls: Add + Search + File Upload */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', m: 2 }}>
         <Button variant="contained" onClick={() => setOpenModal(true)}>
           + Add Deal
+        </Button>
+        <TextField
+          label="Search deals..."
+          variant="outlined"
+          size="small"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{ width: 300 }}
+        />
+        <Button variant="contained" component="label">
+          Upload Deals
+          <input type="file" accept=".json" hidden onChange={handleFileChange} />
+        </Button>
+        <Button variant="contained" onClick={handleFileUpload} disabled={!uploadFile}>
+          Upload
         </Button>
       </Box>
 
@@ -119,40 +177,42 @@ const KanbanBoard = () => {
             <Box key={stage} sx={{ minWidth: 280, mx: 1 }}>
               <Paper sx={{ p: 1, bgcolor: '#f5f5f5', height: '100%' }}>
                 <Typography variant="h6" sx={{ p: 1, fontWeight: 'bold' }}>
-                  {stage} ({deals.filter(d => d.stage === stage).length})
+                  {stage} ({filteredDeals.filter(d => d.stage === stage).length})
                 </Typography>
 
                 <Droppable droppableId={stage}>
                   {(provided) => (
                     <Box ref={provided.innerRef} {...provided.droppableProps} sx={{ height: 'calc(100% - 40px)', overflowY: 'auto' }}>
-                      {deals.filter(deal => deal.stage === stage).map((deal, index) => (
-                        <Draggable key={deal._id} draggableId={deal._id} index={index}>
-                          {(provided) => (
-                            <Card ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} sx={{ mb: 2, bgcolor: 'white' }}>
-                              <CardContent>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <Typography variant="h6">{deal.title}</Typography>
-                                  <IconButton size="small" onClick={(e) => openMenu(e, deal._id)}><MoreVert /></IconButton>
-                                </Box>
-                                <Typography variant="body2" color="textSecondary">{deal.company}</Typography>
-                                <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
-                                  <Chip icon={<AttachMoney />} label={`$${deal.value.toLocaleString()}`} size="small" color="primary" />
-                                  <Typography variant="caption">{new Date(deal.updatedAt).toLocaleDateString()}</Typography>
-                                </Box>
-                              </CardContent>
+                      {filteredDeals
+                        .filter(deal => deal.stage === stage)
+                        .map((deal, index) => (
+                          <Draggable key={deal._id} draggableId={deal._id} index={index}>
+                            {(provided) => (
+                              <Card ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps} sx={{ mb: 2, bgcolor: 'white' }}>
+                                <CardContent>
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                                    <Typography variant="h6">{deal.title}</Typography>
+                                    <IconButton size="small" onClick={(e) => openMenu(e, deal._id)}><MoreVert /></IconButton>
+                                  </Box>
+                                  <Typography variant="body2" color="textSecondary">{deal.company}</Typography>
+                                  <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between' }}>
+                                    <Chip icon={<AttachMoney />} label={`$${deal.value.toLocaleString()}`} size="small" color="primary" />
+                                    <Typography variant="caption">{new Date(deal.updatedAt).toLocaleDateString()}</Typography>
+                                  </Box>
+                                </CardContent>
 
-                              <Menu
-                                anchorEl={anchorEl}
-                                open={menuDealId === deal._id}
-                                onClose={closeMenu}
-                              >
-                                <MenuItem onClick={() => handleEdit(deal)}>Edit</MenuItem>
-                                <MenuItem onClick={() => handleDeleteDeal(deal._id)}>Delete</MenuItem>
-                              </Menu>
-                            </Card>
-                          )}
-                        </Draggable>
-                      ))}
+                                <Menu
+                                  anchorEl={anchorEl}
+                                  open={menuDealId === deal._id}
+                                  onClose={closeMenu}
+                                >
+                                  <MenuItem onClick={() => handleEdit(deal)}>Edit</MenuItem>
+                                  <MenuItem onClick={() => handleDeleteDeal(deal._id)}>Delete</MenuItem>
+                                </Menu>
+                              </Card>
+                            )}
+                          </Draggable>
+                        ))}
                       {provided.placeholder}
                     </Box>
                   )}
@@ -165,7 +225,10 @@ const KanbanBoard = () => {
 
       {/* Modal for Add/Edit Deal */}
       <Modal open={openModal} onClose={() => { setOpenModal(false); resetModal(); }}>
-        <Box sx={{ p: 3, bgcolor: 'white', width: 400, maxHeight: '90vh', overflowY: 'auto', mx: 'auto', mt: 5, display: 'flex', flexDirection: 'column', gap: 2, borderRadius: 2 }}>
+        <Box sx={{
+          p: 3, bgcolor: 'white', width: 400, maxHeight: '90vh', overflowY: 'auto',
+          mx: 'auto', mt: 5, display: 'flex', flexDirection: 'column', gap: 2, borderRadius: 2
+        }}>
           <Typography variant="h6">{isEditing ? 'Edit Deal' : 'Add New Deal'}</Typography>
           <TextField label="Title" value={newDeal.title} onChange={(e) => setNewDeal({ ...newDeal, title: e.target.value })} />
           <TextField label="Company" value={newDeal.company} onChange={(e) => setNewDeal({ ...newDeal, company: e.target.value })} />
