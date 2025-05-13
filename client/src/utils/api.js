@@ -2,7 +2,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'https://aipipeline-l70a.onrender.com/api',
+  baseURL: 'https://aipipeline-server.onrender.com/api',
 });
 
 API.interceptors.request.use((req) => {

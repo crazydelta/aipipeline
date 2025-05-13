@@ -24,7 +24,7 @@ const AIAssistant = () => {
     setLoading(true);
 
     try {
-      const res = await fetch('https://aipipeline-l70a.onrender.com/api/ai/assistant', {
+      const res = await fetch('https://aipipeline-server.onrender.com/api/ai/assistant', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

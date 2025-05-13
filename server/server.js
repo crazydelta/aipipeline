@@ -15,7 +15,7 @@ const app = express();
 
 const allowedOrigins = [
   'http://localhost:5173', // for local dev
-  'https://aipipeline-frontend.onrender.com', // your deployed frontend
+  'https://aipipeline-frontend.onrender.com', 'https://aipipeline.onrender.com'// your deployed frontend
 ];
 
 app.use(cors({
